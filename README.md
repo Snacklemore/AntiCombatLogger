@@ -11,7 +11,7 @@ In order for the ACL to work you need to assign a few variables inside your init
 void main()
 {
 	[...]
-	ENDPOINT_URL   = "https://discord.com/api/webhooks/873178462565826581/yPeU4Bp9CN6Y9_VT53tU_Qwli7gzqnCZV1SQ5efAMmnM9_zYaScH25jH29TjOqKszC0Q";
+	ENDPOINT_URL   = "yourdiscordhook";
 	GetWebhook().UpdateURL();
 }
 
