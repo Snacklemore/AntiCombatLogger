@@ -7,16 +7,16 @@ Logging out in any way ( e.g. ALT+F4 or killing the gameprocess) will then be lo
 # Setting up
 
 In order for the ACL to work you need to assign a few variables inside your init.c on your server.
-`
+```java
 void main()
 {
 	[...]
 	ENDPOINT_URL   = "https://discord.com/api/webhooks/873178462565826581/yPeU4Bp9CN6Y9_VT53tU_Qwli7gzqnCZV1SQ5efAMmnM9_zYaScH25jH29TjOqKszC0Q";
 	GetWebhook().UpdateURL();
 }
-`
 
-`
+
+
 class CustomMission: MissionServer
 {
 	
@@ -36,6 +36,6 @@ class CustomMission: MissionServer
 		GetRPCManager().SendRPC("RPCACL","OnConfigTransmitRPCACL",new Param2<int,float>(COMBAT_MODE_TIMER,COMBAT_FLAG_DISTANCE),false,identity);
 
 	}
-`
+```
 
 
