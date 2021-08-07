@@ -154,7 +154,7 @@ modded class MissionServer
 		
 		// handle player's existing char in the world
 		player.ReleaseNetworkControls();
-		//HandleBody(player);
+		HandleBody(player);
 		
 		// remove player from server
 		GetGame().DisconnectPlayer(identity, uid);
