@@ -4,7 +4,7 @@ class CfgPatches
  {
   requiredAddons[]=
   {
-    // ""
+    JM_CF_Scripts
   };
  }
 }

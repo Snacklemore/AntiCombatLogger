@@ -15,13 +15,24 @@ modded class MissionServer
 	//note: suicide does not trigger the combattimer
 	
 	//known issue: logging when player dead, timer running and disconnecting(false positive)
-	//			   
+	//			  
+	
+	
+	ref ConfigTransmit m_ConfigRPC_ACL;
+	int COMBAT_MODE_TIMER ;
+	float COMBAT_FLAG_DISTANCE ;
 	void MissionServer()
 	{
-		GetWebhook();
+		Init();
 		
 	}
-	
+	void Init()
+	{
+		GetWebhook();
+		m_ConfigRPC_ACL  =  new ConfigTransmit("RPCACL","OnConfigTransmitRPCACL");
+		Print("InitServerMission");
+		
+	}
 	override void OnClientDisconnectedEvent(PlayerIdentity identity, PlayerBase player, int logoutTime, bool authFailed)
 	{
 		bool disconnectNow = true;
@@ -285,4 +296,4 @@ modded class MissionServer
 			break;
 		}
 	}
-}
+};
