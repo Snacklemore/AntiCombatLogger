@@ -23,6 +23,7 @@ class CustomMission: MissionServer
 	
   	void  CustomMission()
 	{
+		//25s and 300m
 		COMBAT_MODE_TIMER =  25;
 		COMBAT_FLAG_DISTANCE = 300.0;
 		
@@ -38,4 +39,4 @@ class CustomMission: MissionServer
 	}
 ```
 
-
+Dependant on Community Frameworks by JacobMango
