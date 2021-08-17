@@ -33,12 +33,15 @@ modded class MissionServer
 		Print("InitServerMission");
 		
 	}
+	
+	override void OnInit()
+	{
+		super.OnInit();
+		
+	}
 	override void OnClientDisconnectedEvent(PlayerIdentity identity, PlayerBase player, int logoutTime, bool authFailed)
 	{
-		bool disconnectNow = true;
-		
-		// TODO: get out of vehicle
-		// using database and no saving if authorization failed
+		super.OnClientDisconnectedEvent(identity,player,logoutTime,authFailed);
 		if (GetHive() && !authFailed)
 		{			
 			if (player.IsAlive())
@@ -47,7 +50,7 @@ modded class MissionServer
 				{
 					
 					
-					Print("[Logout]: New player " + identity.GetId() + " with logout time " + logoutTime.ToString());
+					
 					
 					
 					if (player.GetCombatLogger().hasFired())
@@ -59,42 +62,12 @@ modded class MissionServer
 						player.GetCombatLogger().m_name = identity.GetName();
 					}
 					
-				
-			
-					// inform client about logout time
-					GetGame().SendLogoutTime(player, logoutTime);
-			
-					// wait for some time before logout and save
-					LogoutInfo params = new LogoutInfo(GetGame().GetTime() + logoutTime * 1000, identity.GetId());
-					
-					m_NewLogoutPlayers.Insert(player, params);
-					GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(AddNewPlayerLogout, 0, false, player, params);
-					
-					// allow reconnecting to old char only if not in cars, od ladders etc. as they cannot be properly synchronized for reconnect
-					//if (!player.GetCommand_Vehicle() && !player.GetCommand_Ladder())
-					//{
-					//	GetGame().AddToReconnectCache(identity);
-					//}
-					// wait until logout timer runs out
-					disconnectNow = false;
 				}
 				return;
 			}		
 		}
 		
 		
-		//appearently  this only executes when player dead, or smthing went wrong badly
-		if (disconnectNow)
-		{
-			Print("[Logout]: New player " + identity.GetId() + " with instant logout");
-			
-			
-			
-			// inform client about instant logout
-			GetGame().SendLogoutTime(player, 0);
-			
-			PlayerDisconnected(player, identity, identity.GetId());
-		}
 	}
 	
 	
@@ -104,14 +77,10 @@ modded class MissionServer
 	
 	override void PlayerDisconnected(PlayerBase player, PlayerIdentity identity, string uid)
 	{
+		//Breaks VPPAdminTools!!!
 		// Note: At this point, identity can be already deleted
-		if (!player)
-		{
-			Print("[Logout]: Skipping player " + uid + ", already removed");
-			//set variable  in MissionServer  to save  the combatLog state 
-			//in case the PlayerBase is destroyed too soon
-			return;
-		}
+		super.PlayerDisconnected(player,identity,uid);
+		
 		
 		
 		
@@ -144,156 +113,40 @@ modded class MissionServer
 					}
 		}
 		
-			
-		
-		// disable reconnecting to old char
-		//GetGame().RemoveFromReconnectCache(uid);
-		
-		// now player can't cancel logout anymore, so call everything needed upon disconnect
-		InvokeOnDisconnect(player);
-
-		Print("[Logout]: Player " + uid + " finished");
-
-		if (GetHive())
-		{
-			// save player
-			player.Save();
-			
-			// unlock player in DB	
-			GetHive().CharacterExit(player);		
-		}
-		
-		// handle player's existing char in the world
-		player.ReleaseNetworkControls();
-		HandleBody(player);
-		
-		// remove player from server
-		GetGame().DisconnectPlayer(identity, uid);
-		// Send list of players at all clients
-		GetGame().GetCallQueue(CALL_CATEGORY_SYSTEM).CallLater(SyncEvents.SendPlayerList, 1000);
 	}
 	
 	
 	override void OnEvent(EventType eventTypeId, Param params) 
 	{
+		super.OnEvent(eventTypeId,params);
 		PlayerIdentity identity;
 		PlayerBase player;
-		int counter = 0;
-		
 		switch(eventTypeId)
 		{
-		case ClientPrepareEventTypeID:
-			ClientPrepareEventParams clientPrepareParams;
-			Class.CastTo(clientPrepareParams, params);
-			
-			OnClientPrepareEvent(clientPrepareParams.param1, clientPrepareParams.param2, clientPrepareParams.param3, clientPrepareParams.param4, clientPrepareParams.param5);
-			break;
-
-		case ClientNewEventTypeID:
-			ClientNewEventParams newParams;
-			Class.CastTo(newParams, params);
-			player = OnClientNewEvent(newParams.param1, newParams.param2, newParams.param3);
-			if (!player)
-			{
-				Debug.Log("ClientNewEvent: Player is empty");
-				return;
-			}
-			identity = newParams.param1;
-			InvokeOnConnect(player,identity );
-			SyncEvents.SendPlayerList();
-			ControlPersonalLight(player);
-			SyncGlobalLighting(player);
-			break;
-			
-		case ClientReadyEventTypeID:
-			ClientReadyEventParams readyParams;
-			Class.CastTo(readyParams, params);
-			identity = readyParams.param1;
-			Class.CastTo(player, readyParams.param2);
-			if (!player)
-			{
-				Debug.Log("ClientReadyEvent: Player is empty");
-				return;
-			}
-			
-			OnClientReadyEvent(identity, player);
-			InvokeOnConnect(player, identity);
-			// Send list of players at all clients
-			SyncEvents.SendPlayerList();
-			ControlPersonalLight(player);
-			SyncGlobalLighting(player);
-			break;
-					
-		case ClientRespawnEventTypeID:
-			ClientRespawnEventParams respawnParams;
-			Class.CastTo(respawnParams, params);
-			identity = respawnParams.param1;
-			Class.CastTo(player, respawnParams.param2);
-			if (!player)
-			{
-				Debug.Log("ClientRespawnEvent: Player is empty");
-				return;
-			}
-			
-			OnClientRespawnEvent(identity, player);
-			break;
-			
-		case ClientReconnectEventTypeID:
-			ClientReconnectEventParams reconnectParams;
-			Class.CastTo(reconnectParams, params);
-			
-			identity = reconnectParams.param1;
-			Class.CastTo(player, reconnectParams.param2);
-			if (!player)
-			{
-				Debug.Log("ClientReconnectEvent: Player is empty");
-				return;
-			}
-			
-			OnClientReconnectEvent(identity, player);
-			break;
 		
-		case ClientDisconnectedEventTypeID:
-			ClientDisconnectedEventParams discoParams;
-			Class.CastTo(discoParams, params);		
+			case LogoutCancelEventTypeID:
+				LogoutCancelEventParams logoutCancelParams;
 			
-			identity = discoParams.param1;
-			Class.CastTo(player, discoParams.param2);			
-			int logoutTime = discoParams.param3;
-			bool authFailed = discoParams.param4;
-
-			if (!player)
-			{
-				Debug.Log("ClientDisconnectenEvent: Player is empty");
-				return;
-			}
+				Class.CastTo(logoutCancelParams, params);				
+				Class.CastTo(player, logoutCancelParams.param1);
+				//player canceled logout
+				Print("[ACL]::OnEvent: Canceled Logout, m_isCombatLogged  = false");
+				player.m_isCombatLogged = false;
 			
-			OnClientDisconnectedEvent(identity, player, logoutTime, authFailed);
-			break;
-			
-		case LogoutCancelEventTypeID:
-			LogoutCancelEventParams logoutCancelParams;
-			
-			Class.CastTo(logoutCancelParams, params);				
-			Class.CastTo(player, logoutCancelParams.param1);
-			//player canceled logout
-			Print("[ACL]::OnEvent: Canceled Logout, m_isCombatLogged  = false");
-			player.m_isCombatLogged = false;
-			
-			identity = player.GetIdentity();
-			if (identity)
-			{
+				identity = player.GetIdentity();
+				if (identity)
+				{
 				// disable reconnecting to old char
 				// GetGame().RemoveFromReconnectCache(identity.GetId());
 				Print("[Logout]: Player " + identity.GetId() + " cancelled"); 
-			}
-			else
-			{
+				}
+				else
+				{
 				Print("[Logout]: Player cancelled"); 
-			}
-			m_LogoutPlayers.Remove(player);
-			m_NewLogoutPlayers.Remove(player);
-			break;
+				}
+				m_LogoutPlayers.Remove(player);
+				m_NewLogoutPlayers.Remove(player);
+				break;
 		}
 	}
 };
